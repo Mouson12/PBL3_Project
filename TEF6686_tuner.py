@@ -88,9 +88,9 @@ class DXMonitor_Window(QDialog, DXMonitor_UI):
         if not self.parent().RDS_PI == '----':
             print("Logging station...")
             try:
-                os.chdir('/home/pi/logs/' + current_date)
+                os.chdir('/home/mikolaj/logs/' + current_date)
             except:
-                os.mkdir('/home/pi/logs/' + current_date)
+                os.mkdir('/home/mikolaj/logs/' + current_date)
             
             file_path = './' + current_date + '_' + str(self.parent().frequency) + '_' + str(self.parent().RDS_PI) + '.txt'
             

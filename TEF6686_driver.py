@@ -787,9 +787,9 @@ class TEF6686:
         self.i2c_write_line(b'\x03\x20\x83\x01')                                            # get all available RDS info               
         result = self.i2c_read(12)                                                          # according to datasheet: 12 bytes returned, e.g., b'\xc2\x00\xde\x1f\x04\x0f\xcb\xcdM \x00\x00\x00\x15\xde\xad'                                                                        # list to collect PIs from several polls
         
-        #if dbg == True:
-        #    print("-----------------------------------------")
-        #    print("Received: ", result, result[0:2])
+        if dbg == True:
+           print("-----------------------------------------")
+           print("Received: ", result, result[0:2])
         
         RDS_STATUS_DATA = self.expand_bin_str( bin(int.from_bytes(result[0:2], 'big')) , 16)
         CRC_DATA = self.expand_bin_str( bin(int.from_bytes(result[10:12], 'big')) , 16)
@@ -801,8 +801,8 @@ class TEF6686:
             if CRC_DATA[0:2] == '00' or CRC_DATA[0:2] == '01':
                 self.RDS_PI = "".join("%02x" % i for i in bytearray(result[2:4]))
             
-            #if dbg == True:
-            #    print("RDS PI:", self.RDS_PI, " CRC: ", CRC_DATA[0:2])
+            if dbg == True:
+               print("RDS PI:", self.RDS_PI, " CRC: ", CRC_DATA[0:2])
 
             RDS_BLOCK_B = self.expand_bin_str( bin(int.from_bytes(result[4:6], 'big')) , 16)
             BLOCK_B_ERROR = CRC_DATA[2:4]                                                  # check block B error to see if the PS offset is wrong           
@@ -812,12 +812,12 @@ class TEF6686:
         
             if self.RDS_ACQUIRING == True and RDS_BLOCK_B[0:5] == '00000':                                                # check if received group is '0A' (containing PS)
                 
-                #print("-----------------------------------------")
+                print("-----------------------------------------")
                 
-                #if dbg == True:
-                #    print("Group type 0A detected!")
-                #    print("Status data: ", RDS_STATUS_DATA, " CRC data: ", CRC_DATA)
-                #    print("RDS block C: ", RDS_BLOCK_C, " Error: ", BLOCK_C_ERROR)
+                if dbg == True:
+                   print("Group type 0A detected!")
+                   print("Status data: ", RDS_STATUS_DATA, " CRC data: ", CRC_DATA)
+                   print("RDS block C: ", RDS_BLOCK_C, " Error: ", BLOCK_C_ERROR)
                 
                 if BLOCK_B_ERROR == '00' or BLOCK_B_ERROR == '01':
                     self.RDS_TP = RDS_BLOCK_B[5]
@@ -898,9 +898,7 @@ class TEF6686:
         if repeat == True:                                                                        # disables continuous polling if library is controlled by a program's main loop
             
             if self.RDS_ACQUIRING == True and self.RDS_ACQUIRED == False:
-                if self.__DEVICE__ == 'ESP32':
-                    time.sleep_ms(pause_time)
-                elif self.__DEVICE__ == 'RPi':
+                if self.__DEVICE__ == 'RPi':
                     time.sleep(pause_time/1000)
                     
             self.get_RDS_data(pause_time, repeat, dbg)

@@ -1,4 +1,5 @@
-from TEF6686_tuner import TEF6686
+from TEF6686_driver import TEF6686
+import time
 
 #-------------- NEW TUNER INSTANCE ----------------
 
@@ -6,7 +7,8 @@ tuner = TEF6686('RPi')
 
 #------- INIT TUNER MODULE AND SETTINGS -----------
 
-tuner.init()					# upload patch for DSP
+tuner.init()
+tuner.set_volume_gain(10)
 
 tuner.start_oscillator()					# oscillator can be 4 or 9.216 MHz
 
@@ -16,10 +18,13 @@ tuner.check_tuner_status() 				# should now return "Radio standby" or "ACTIVE" s
 
 #----------------   USE TUNER ---------------------
 
-tuner.set_volume_gain(0)				# volume gain: -599 to 240 (div. by 10: gain in dB!)
-
-tuner.tune_to('FM',9880)
-
-print(tuner.get_signal_info(mode="full", dbg=True))					# returns info about tuned signal: strength in dBµV, stereo (true/false), RDS available (true/false)
-
-tuner.get_RDS_data()					# rudimentary implementation to read RDS PS, PTY, TP
+tuner.tune_to('FM',10750)
+RDS_status = False
+RSSI = 0
+STEREO = False
+IF = 0
+while not RDS_status:
+    RSSI, STEREO, RDS_status, IF = tuner.get_signal_info(mode="full")
+while True:
+    print(list(tuner.get_RDS_data(pause_time=0, repeat=False)))
+    time.sleep(0.5)
