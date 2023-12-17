@@ -558,7 +558,6 @@ class TEF6686:
             
         
     def tune_to(self, BAND, FREQ):
-        
         print("Tuning to frequency ", FREQ, "in band ", BAND)
 
         TUNE_TO_BYTE_ARRAY = b''
@@ -811,8 +810,6 @@ class TEF6686:
             RDS_BLOCK_D = result[8:10]
         
             if self.RDS_ACQUIRING == True and RDS_BLOCK_B[0:5] == '00000':                                                # check if received group is '0A' (containing PS)
-                
-                print("-----------------------------------------")
                 
                 if dbg == True:
                    print("Group type 0A detected!")

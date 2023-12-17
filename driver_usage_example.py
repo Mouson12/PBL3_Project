@@ -28,3 +28,4 @@ while not RDS_status:
 while True:
     print(list(tuner.get_RDS_data(pause_time=0, repeat=False)))
     time.sleep(0.5)
+    
