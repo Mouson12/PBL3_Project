@@ -1,5 +1,7 @@
 from multiprocessing import Process, Queue
 from TEF6686_driver import TEF6686
+from paho.mqtt import client as mqtt_client
+
 from time import sleep
 from datetime import datetime
 import paho.mqtt.client as mqtt
@@ -27,7 +29,7 @@ class Radio(TEF6686):
         while not self.is_rds:
             if count < wait_time:
                 self.rssi, self.is_stereo, self.is_rds, self.if_band \
-                    = radio.get_signal_info(mode="full")
+                    = self.get_signal_info(mode="full")
                 self.rssi = round(self.rssi, 1)
                 print(self.rssi)
                 print(self.if_band)
@@ -42,27 +44,28 @@ class Radio(TEF6686):
     # Method for writing rssi, ps rds, rt rds to queue
     def write_radio_data(self, data_queue):
         dict_list = []
-        data_list = []
         while True:
             self.rssi, self.is_stereo, self.is_rds, self.if_band \
-                = radio.get_signal_info(mode="full")
+                = self.get_signal_info(mode="full")
             self.rssi = round(self.rssi, 1)
 
             if not self.is_rds:
-                data_queue.put(None)
-                break
-
-            for rds_dict in radio.get_RDS_data(pause_time=0, repeat=False):
-                dict_list.append(rds_dict)
+                for rds_dict in radio.get_RDS_data(pause_time=0, repeat=False):
+                    dict_list.append(rds_dict)                
             
             if len(dict_list) > 0:
                 rds_dict = dict_list[-1]
                 self.rds_pi = rds_dict["PI"]  
                 self.rds_ps = rds_dict["PS"]
                 self.rds_rt = rds_dict["RT"]
+            else:
+                self.rds_pi = ""
+                self.rds_ps = ""
+                self.rds_rt = ""
             
-            data_list = [self.rssi, self.rds_pi, self.rds_ps, self.rds_rt]
-            data_queue.put(data_list)
+            time_stamp = datetime()
+            data_dict = {"ts": time_stamp, "rssi": self.rssi, "rds_pi": self.rds_pi, "rds_ps": self.rds_ps, "rds_rt": self.rds_rt}
+            data_queue.put(data_dict)
             sleep(0.07)
 
     
@@ -77,43 +80,89 @@ class Radio(TEF6686):
                 print(item)
 
 
+def connect_mqtt():
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect, return code %d\n", rc)
+
+    client = mqtt_client.Client(client_id)
+    # client.username_pw_set(username, password)
+    client.on_connect = on_connect
+    client.connect(broker, port)
+    return client
+
+
+def publish(client):
+    msg_count = 1
+    while True:
+        sleep(1)
+        msg = f"messages: {msg_count}"
+        result = client.publish(topic, msg)
+        # result: [0, 1]
+        status = result[0]
+        if status == 0:
+            print(f"Send `{msg}` to topic `{topic}`")
+        else:
+            print(f"Failed to send message to topic {topic}")
+        msg_count += 1
+        if msg_count > 5:
+            break
+
+
+def run():
+    client = connect_mqtt()
+    client.loop_start()
+    publish(client)
+    client.loop_stop()
+
 
 if __name__ == "__main__":
-    id = hex(uuid.getnode())
-    
+    client_id = hex(uuid.getnode())
+
     ################
     radio_frequency = 98.8 # [MHz] !!!!!!!!!
-    broker = 'broker.emqx.io'
+    broker = '192.168.114.43'
     port = 1883
-    topic = "python/mqtt"
+    topic = "sensor-data"
     ################
-
- 
-
-    
-    client_id = 
 
     # Starting radio tuner 
     
-    print (id)
-    radio = Radio(id)
+    print (client_id)
+    radio = Radio(client_id)
     radio.init()
     radio.set_volume_gain(10)
     radio.start_oscillator()
     radio.load_settings()
     radio.check_tuner_status()
 
+    
+    """
+    Start client
+    """
+
+    client = connect_mqtt()
+
+    queue_d = Queue()
+    write_process = Process(target=radio.write_radio_data, args=(queue_d,))
+    read_process = Process(target=radio.read_radio_data, args=(queue_d,))
+
     # Setting frequency
-    radio.tune_to('FM', int(radio_frequency*100)) 
+    # radio.tune_to('FM', int(radio_frequency*100)) 
 
     # Waiting for rds
-    radio.start_rds()
+
+
 
     # Starting processes
-    queue = Queue()
-    write_process = Process(target=radio.write_radio_data, args=(queue,))
-    read_process = Process(target=radio.read_radio_data, args=(queue,))
-    write_process.start()
-    read_process.start()
-    write_process.join()
-    read_process.join()
+    
+    
+    
+    # write_process.start()
+    # read_process.start()
+
+
+    # write_process.join()
+    # read_process.join()
