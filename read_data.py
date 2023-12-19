@@ -2,11 +2,15 @@ from multiprocessing import Process, Queue
 from TEF6686_driver import TEF6686
 from time import sleep
 from datetime import datetime
+import paho.mqtt.client as mqtt
 import logging
+import uuid
+
 
 class Radio(TEF6686):
-    def __init__(self, DEVICE = 'RPi', I2C_SDA = None, I2C_SCL = None, I2C_HW_ESP = -1) -> None:
+    def __init__(self, DEVICE_ID, DEVICE = 'RPi', I2C_SDA = None, I2C_SCL = None, I2C_HW_ESP = -1) -> None:
         super().__init__(DEVICE, I2C_SDA, I2C_SCL, I2C_HW_ESP)
+        self.id = DEVICE_ID
         self.rssi = 0
         self.is_stereo = False
         self.is_rds = False
@@ -57,7 +61,7 @@ class Radio(TEF6686):
                 self.rds_ps = rds_dict["PS"]
                 self.rds_rt = rds_dict["RT"]
             
-            data_list = [self.rssi, self.rds_ps, self.rds_rt]
+            data_list = [self.rssi, self.rds_pi, self.rds_ps, self.rds_rt]
             data_queue.put(data_list)
             sleep(0.07)
 
@@ -75,12 +79,24 @@ class Radio(TEF6686):
 
 
 if __name__ == "__main__":
+    id = hex(uuid.getnode())
+    
     ################
-    radio_frequency = 91 # [MHz] !!!!!!!!!
+    radio_frequency = 98.8 # [MHz] !!!!!!!!!
+    broker = 'broker.emqx.io'
+    port = 1883
+    topic = "python/mqtt"
     ################
 
+ 
+
+    
+    client_id = 
+
     # Starting radio tuner 
-    radio = Radio()
+    
+    print (id)
+    radio = Radio(id)
     radio.init()
     radio.set_volume_gain(10)
     radio.start_oscillator()
