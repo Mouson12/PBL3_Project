@@ -66,7 +66,7 @@ class Radio(TEF6686):
     def read_radio_data(self, data_queue):
         while True:
             item = data_queue.get()
-            
+
             if item is None:
                 break
             else:
