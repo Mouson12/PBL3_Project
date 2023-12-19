@@ -2,9 +2,8 @@ from multiprocessing import Process, Queue
 from TEF6686_driver import TEF6686
 from paho.mqtt import client as mqtt_client
 
-from time import sleep
+from time import sleep, time
 from datetime import datetime
-import paho.mqtt.client as mqtt
 import logging
 import uuid
 
@@ -49,7 +48,7 @@ class Radio(TEF6686):
                 = self.get_signal_info(mode="full")
             self.rssi = round(self.rssi, 1)
 
-            if not self.is_rds:
+            if self.is_rds:
                 for rds_dict in radio.get_RDS_data(pause_time=0, repeat=False):
                     dict_list.append(rds_dict)                
             
@@ -63,22 +62,33 @@ class Radio(TEF6686):
                 self.rds_ps = ""
                 self.rds_rt = ""
             
-            time_stamp = datetime()
+
+            
+            time_stamp = time()
             data_dict = {"ts": time_stamp, "rssi": self.rssi, "rds_pi": self.rds_pi, "rds_ps": self.rds_ps, "rds_rt": self.rds_rt}
+            # print(self.is_rds)
+            # print(data_dict)
             data_queue.put(data_dict)
             sleep(0.07)
 
     
     # Method for reading data from queue
-    def read_radio_data(self, data_queue):
+    def read_radio_data(self, data_queue, client):
         while True:
             item = data_queue.get()
             
             if item is None:
                 break
             else:
+                msg = dict_to_csv(item)
+                publish(client, msg)
                 print(item)
 
+
+def dict_to_csv(data_dict):
+    csv = f"{data_dict['ts']}, {data_dict['rssi']}, {data_dict['rds_pi']}, {data_dict['rds_ps']}, {data_dict['rds_rt']}"
+    return csv
+    
 
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
@@ -94,21 +104,15 @@ def connect_mqtt():
     return client
 
 
-def publish(client):
-    msg_count = 1
-    while True:
-        sleep(1)
-        msg = f"messages: {msg_count}"
-        result = client.publish(topic, msg)
-        # result: [0, 1]
-        status = result[0]
-        if status == 0:
-            print(f"Send `{msg}` to topic `{topic}`")
-        else:
-            print(f"Failed to send message to topic {topic}")
-        msg_count += 1
-        if msg_count > 5:
-            break
+def publish(client, msg):
+    result = client.publish(topic, msg)
+    # result: [0, 1]
+    status = result[0]
+    if status == 0:
+        print(f"Send `{msg}` to topic `{topic}`")
+    else:
+        print(f"Failed to send message to topic {topic}")
+
 
 
 def run():
@@ -138,7 +142,7 @@ if __name__ == "__main__":
     radio.load_settings()
     radio.check_tuner_status()
 
-    
+    radio.tune_to('FM', int(radio_frequency*100)) 
     """
     Start client
     """
@@ -147,22 +151,11 @@ if __name__ == "__main__":
 
     queue_d = Queue()
     write_process = Process(target=radio.write_radio_data, args=(queue_d,))
-    read_process = Process(target=radio.read_radio_data, args=(queue_d,))
+    read_process = Process(target=radio.read_radio_data, args=(queue_d, client,))
 
     # Setting frequency
-    # radio.tune_to('FM', int(radio_frequency*100)) 
-
-    # Waiting for rds
-
-
-
-    # Starting processes
     
-    
-    
-    # write_process.start()
-    # read_process.start()
-
-
-    # write_process.join()
-    # read_process.join()
+    write_process.start()
+    read_process.start()
+    write_process.join()
+    read_process.join()
