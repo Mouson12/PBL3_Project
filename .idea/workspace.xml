@@ -48,11 +48,22 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1703100822103</updated>
-      <workItem from="1703100823147" duration="5613000" />
+      <workItem from="1703100823147" duration="7584000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
+          <url>notebook://C:/Users/szymo/Documents/PBL projekt/PBL3_Project/PlotOnMap.ipynb</url>
+          <line>47</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
