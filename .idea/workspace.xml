@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="45625025-07f7-493f-9794-af15960fccee" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/AP_locations.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AP_locations.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/extract_data.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/extract_data.ipynb" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -32,7 +31,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "91db4817",
+    "git-widget-placeholder": "LAB__W11",
     "last_opened_file_path": "C:/Users/szymo/Documents/PBL projekt/PBL3_Project",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -49,11 +48,22 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1703100822103</updated>
-      <workItem from="1703100823147" duration="4863000" />
+      <workItem from="1703100823147" duration="7584000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="jupyter-line">
+          <url>notebook://C:/Users/szymo/Documents/PBL projekt/PBL3_Project/PlotOnMap.ipynb</url>
+          <line>47</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
