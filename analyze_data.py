@@ -81,16 +81,15 @@ class Analyzer():
     # Method that deletes unnecessary data records
     # if RDS doesn't change
     def filter_by_rds(self):
-        if any(self.rds_pi != self.last_pi, self.rds_ps != self.last_ps, self.rds_rt != self.last_rt):
+        if any((self.rds_pi != self.last_pi, self.rds_ps != self.last_ps, self.rds_rt != self.last_rt)):
             self.rds_code_set = False
-            pass
-        elif not any(self.rssi_change, self.audio_change):
-            return None
+            return 0, 0, 0
+        elif not any((self.rssi_change, self.audio_change)):
+            return None, None, None
         else:
-            self.rds_pi_status_code = self.last_pi_code
-            self.rds_ps_status_code = self.last_ps_code
-            self.rds_rt_status_code = self.last_rt_code
             self.rds_code_set = True
+            return self.last_pi_code, self.last_ps_code, self.last_rt_code
+
         
     # Method that returns RDS PI status code
     def rds_pi_status(self, is_rds):
