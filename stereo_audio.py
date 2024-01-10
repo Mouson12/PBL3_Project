@@ -31,7 +31,7 @@ def fft_calc(data_vec):
 #
 ##############################################
 # function for setting up pyserial
-##############################################
+##############################################``
 #
 def pyserial_start():
     audio = pyaudio.PyAudio() # create pyaudio instantiation

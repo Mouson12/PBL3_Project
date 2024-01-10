@@ -1,6 +1,7 @@
 from multiprocessing import Process, Queue
 from TEF6686_driver import TEF6686
 from paho.mqtt import client as mqtt_client
+import pandas as pd
 
 from time import sleep, time
 from datetime import datetime
@@ -66,7 +67,6 @@ class Radio(TEF6686):
             
             time_stamp = time()
             data_dict = {"ts": time_stamp, "rssi": self.rssi, "rds_pi": self.rds_pi, "rds_ps": self.rds_ps, "rds_rt": self.rds_rt}
-            # print(self.is_rds)
             # print(data_dict)
             data_queue.put(data_dict)
             sleep(0.07)
@@ -74,6 +74,7 @@ class Radio(TEF6686):
     
     # Method for reading data from queue
     def analyze_radio_data(self, data_queue, client, analyzer):
+
         while True:
             item = data_queue.get()
 
@@ -96,9 +97,10 @@ class Radio(TEF6686):
                 status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
                 item["status_code"] = status_code
 
+
                 msg = dict_to_csv(item)
-                publish(client, msg)
-                print(item)
+                print(msg)
+                # publish(client, msg)
 
 
 def dict_to_csv(data_dict):
@@ -122,7 +124,6 @@ def connect_mqtt():
 
 def publish(client, msg):
     result = client.publish(topic, msg)
-    # result: [0, 1]
     status = result[0]
     if status == 0:
         print(f"Send `{msg}` to topic `{topic}`")
@@ -142,8 +143,8 @@ if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 98.8 # [MHz] !!!!!!!!!
-    broker = '192.168.114.43'
+    radio_frequency = 107.5 # [MHz] !!!!!!!!!
+    broker = '192.168.114.'
     port = 1883
     topic = "sensor-data"
     ################
