@@ -57,7 +57,7 @@ class Radio(TEF6686):
                 rds_dict = dict_list[-1]
                 self.rds_pi = rds_dict["PI"]  
                 self.rds_ps = rds_dict["PS"]
-                self.rds_rt = rds_dict["RT"]
+                self.rds_rt = rds_dict["RT"].rstrip()
             else:
                 self.rds_pi = ""
                 self.rds_ps = ""
@@ -74,7 +74,7 @@ class Radio(TEF6686):
     
     # Method for reading data from queue
     def analyze_radio_data(self, data_queue, client, analyzer):
-
+        
         while True:
             item = data_queue.get()
 
@@ -87,7 +87,10 @@ class Radio(TEF6686):
                 rssi_status_code = analyzer.rssi_status()
                 audio_status_code = analyzer.audio_status()
 
-                analyzer.filter_by_rds()
+                rds_pi_status_code, rds_ps_status_code, rds_rt_status_code = analyzer.filter_by_rds()
+
+                if rds_pi_status_code is None:
+                    continue
 
                 if not analyzer.rds_code_set:
                     rds_pi_status_code = analyzer.rds_pi_status(self.is_rds)
@@ -95,11 +98,11 @@ class Radio(TEF6686):
                     rds_rt_status_code = analyzer.rds_rt_status(self.is_rds)
 
                 status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
-                item["status_code"] = status_code
+                item["status_code"] = bin(status_code)
 
-
-                msg = dict_to_csv(item)
-                print(msg)
+                print(item)
+                # msg = dict_to_csv(item)
+                # print(msg)
                 # publish(client, msg)
 
 
@@ -143,8 +146,8 @@ if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 107.5 # [MHz] !!!!!!!!!
-    broker = '192.168.114.'
+    radio_frequency = 98.8 # [MHz] !!!!!!!!!
+    broker = '192.168.1.35'
     port = 1883
     topic = "sensor-data"
     ################
