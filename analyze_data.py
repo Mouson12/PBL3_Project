@@ -3,11 +3,13 @@ class Analyzer():
     
     def __init__(self) -> None:
         self.NO_SIGNAL = 0
-        self.RSSI_THRESHOLD = 10
+        self.RSSI_LOWER_THRESHOLD = 10
+        self.RSSI_UPPER_THRESHOLD = 70
         self.SIGNIFICANT_RSSI_CHANGE = 5
 
         self.NO_AUDIO = 0
-        self.AUDIO_THRESHOLD = 10
+        self.AUDIO_LOWER_THRESHOLD = 10
+        self.AUDIO_UPPER_THRESHOLD = 100
         self.SIGNIFICANT_AUDIO_CHANGE = 5
 
         self.rssi = 0
@@ -45,11 +47,11 @@ class Analyzer():
         delta_rssi = abs(self.last_rssi - self.rssi)
         self.rssi_change = delta_rssi > self.SIGNIFICANT_RSSI_CHANGE
 
-        if self.rssi >= self.RSSI_THRESHOLD:
+        if self.rssi >= self.RSSI_LOWER_THRESHOLD:
             rssi_status_code = 0
         elif self.rssi == self.NO_SIGNAL:
             rssi_status_code = 1
-        elif self.rssi < self.RSSI_THRESHOLD:
+        elif self.rssi < self.RSSI_LOWER_THRESHOLD:
             rssi_status_code = 2
         else:
             rssi_status_code = 3
@@ -63,11 +65,11 @@ class Analyzer():
         delta_audio = abs(self.last_audio - self.audio_level)
         self.audio_change = delta_audio > self.SIGNIFICANT_AUDIO_CHANGE
 
-        if self.audio_level >= self.AUDIO_THRESHOLD:
+        if self.audio_level >= self.AUDIO_LOWER_THRESHOLD:
             audio_status_code = 0
         elif self.audio_level == self.NO_AUDIO:
             audio_status_code = 1
-        elif self.audio_level < self.AUDIO_THRESHOLD:
+        elif self.audio_level < self.AUDIO_LOWER_THRESHOLD:
             audio_status_code = 2
         else:
             audio_status_code = 3
