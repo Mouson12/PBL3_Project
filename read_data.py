@@ -6,7 +6,7 @@ from time import sleep, time
 from datetime import datetime
 import logging
 import uuid
-
+from analyze_data import Analyzer
 
 class Radio(TEF6686):
     def __init__(self, DEVICE_ID, DEVICE = 'RPi', I2C_SDA = None, I2C_SCL = None, I2C_HW_ESP = -1) -> None:
@@ -20,7 +20,7 @@ class Radio(TEF6686):
         self.rds_ps = '--------'
         self.rds_rt = '--------------------------------'
 
-    # Method to ensure, that rds is active on given frequency
+    # Method to ensure that rds is active on given frequency
     def start_rds(self, RDS_TIMEOUT: int = 10):
         wait_time = RDS_TIMEOUT * 10
         count = 0
@@ -41,7 +41,7 @@ class Radio(TEF6686):
         return None
 
     # Method for writing rssi, ps rds, rt rds to queue
-    def write_radio_data(self, data_queue):
+    def queue_radio_data(self, data_queue):
         dict_list = []
         while True:
             self.rssi, self.is_stereo, self.is_rds, self.if_band \
@@ -73,13 +73,29 @@ class Radio(TEF6686):
 
     
     # Method for reading data from queue
-    def read_radio_data(self, data_queue, client):
+    def analyze_radio_data(self, data_queue, client, analyzer):
         while True:
             item = data_queue.get()
 
             if item is None:
                 break
             else:
+                item['audio'] = 15
+                analyzer.data_from_dict(item)
+
+                rssi_status_code = analyzer.rssi_status()
+                audio_status_code = analyzer.audio_status()
+
+                analyzer.filter_by_rds()
+
+                if not analyzer.rds_code_set:
+                    rds_pi_status_code = analyzer.rds_pi_status(self.is_rds)
+                    rds_ps_status_code = analyzer.rds_ps_status(self.is_rds)
+                    rds_rt_status_code = analyzer.rds_rt_status(self.is_rds)
+
+                status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
+                item["status_code"] = status_code
+
                 msg = dict_to_csv(item)
                 publish(client, msg)
                 print(item)
@@ -147,15 +163,17 @@ if __name__ == "__main__":
     Start client
     """
 
+    analyzer = Analyzer()
+
     client = connect_mqtt()
 
     queue_d = Queue()
-    write_process = Process(target=radio.write_radio_data, args=(queue_d,))
-    read_process = Process(target=radio.read_radio_data, args=(queue_d, client,))
+    queue_process = Process(target=radio.queue_radio_data, args=(queue_d,))
+    analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, client, analyzer,))
 
     # Setting frequency
     
-    write_process.start()
-    read_process.start()
-    write_process.join()
-    read_process.join()
+    queue_process.start()
+    analyze_process.start()
+    queue_process.join()
+    analyze_process.join()

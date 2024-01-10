@@ -18,6 +18,8 @@ class Analyzer():
         self.last_audio = 0
         self.audio_change = 0
 
+        self.rds_code_set = False
+
         self.rds_pi = ''
         self.last_pi = ''
         self.last_pi_code = 0
@@ -78,6 +80,7 @@ class Analyzer():
     # if RDS doesn't change
     def filter_by_rds(self):
         if any(self.rds_pi != self.last_pi, self.rds_ps != self.last_ps, self.rds_rt != self.last_rt):
+            self.rds_code_set = False
             pass
         elif not any(self.rssi_change, self.audio_change):
             return None
@@ -85,6 +88,7 @@ class Analyzer():
             self.rds_pi_status_code = self.last_pi_code
             self.rds_ps_status_code = self.last_ps_code
             self.rds_rt_status_code = self.last_rt_code
+            self.rds_code_set = True
         
     # Method that returns RDS PI status code
     def rds_pi_status(self, is_rds):
@@ -127,8 +131,6 @@ class Analyzer():
         return rds_ps_status_code
 
     # Method that returns RDS RT status code
-    # used status codes: 0, 1, 2, 15
-    # status codes 3-14 left for future use
     def rds_rt_status(self, is_rds):
         # no RDS
         if not is_rds:
@@ -152,20 +154,10 @@ class Analyzer():
 
     # Method that concatenates all status codes into one
     def status_code(self, rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code):
-        print(rssi_status_code)
-        print(audio_status_code)
-        print(rds_pi_status_code)
-        print(rds_ps_status_code)
-        print(rds_rt_status_code)
         audio_status_code = audio_status_code << 2
-        print(bin(audio_status_code))
         rds_pi_status_code = rds_pi_status_code << 4
-        print(bin(rds_pi_status_code))
         rds_ps_status_code = rds_ps_status_code << 6
-        print(bin(rds_ps_status_code))
         rds_rt_status_code = rds_rt_status_code << 8
-        print(bin(rds_rt_status_code))
-
 
         status_code = rssi_status_code + audio_status_code + rds_pi_status_code + rds_ps_status_code + rds_rt_status_code
 
@@ -177,16 +169,21 @@ if __name__ == "__main__":
         analyzer = Analyzer()
         is_rds = True
 
-        item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
+        # item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
 
         analyzer.data_from_dict(item)
 
         rssi_status_code = analyzer.rssi_status()
         audio_status_code = analyzer.audio_status()
-        rds_pi_status_code = analyzer.rds_pi_status(is_rds)
-        rds_ps_status_code = analyzer.rds_ps_status(is_rds)
-        rds_rt_status_code = analyzer.rds_rt_status(is_rds)
+
+        analyzer.filter_by_rds()
+
+        if not analyzer.rds_code_set:
+            rds_pi_status_code = analyzer.rds_pi_status(is_rds)
+            rds_ps_status_code = analyzer.rds_ps_status(is_rds)
+            rds_rt_status_code = analyzer.rds_rt_status(is_rds)
 
         status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
+        item["status_code"] = status_code
         print(bin(status_code))
         print(status_code)
