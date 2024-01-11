@@ -1,7 +1,7 @@
 from multiprocessing import Process, Queue
 from TEF6686_driver import TEF6686
 from paho.mqtt import client as mqtt_client
-import pandas as pd
+import json
 
 from time import sleep, time
 from datetime import datetime
@@ -73,8 +73,7 @@ class Radio(TEF6686):
 
     
     # Method for reading data from queue
-    def analyze_radio_data(self, data_queue, client, analyzer):
-        
+    def analyze_radio_data(self, data_queue, analyzed_queue, analyzer):
         while True:
             item = data_queue.get()
 
@@ -98,16 +97,25 @@ class Radio(TEF6686):
                     rds_rt_status_code = analyzer.rds_rt_status(self.is_rds)
 
                 status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
-                item["status_code"] = bin(status_code)
+                item["code"] = status_code
 
-                print(item)
-                # msg = dict_to_csv(item)
+                analyzed_queue.put(item)
+    
+
+    def send_analyzed_data(self, analyzed_queue, client):
+        while True:
+            item = analyzed_queue.get()
+
+            if item is None:
+                break
+            else:
+                msg = dict_to_csv(item)
                 # print(msg)
-                # publish(client, msg)
+                publish(client, msg)
 
 
 def dict_to_csv(data_dict):
-    csv = f"{data_dict['ts']}, {data_dict['rssi']}, {data_dict['rds_pi']}, {data_dict['rds_ps']}, {data_dict['rds_rt']}"
+    csv = f"{data_dict['ts']}, {data_dict['rssi']}, {data_dict['rds_pi']}, {data_dict['rds_ps']}, {data_dict['rds_rt']}, {data_dict['audio']}, {data_dict['code']}"
     return csv
     
 
@@ -146,7 +154,7 @@ if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 98.8 # [MHz] !!!!!!!!!
+    radio_frequency = 91.0 # [MHz] !!!!!!!!!
     broker = '192.168.1.35'
     port = 1883
     topic = "sensor-data"
@@ -172,12 +180,16 @@ if __name__ == "__main__":
     client = connect_mqtt()
 
     queue_d = Queue()
+    queue_a = Queue()
     queue_process = Process(target=radio.queue_radio_data, args=(queue_d,))
-    analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, client, analyzer,))
+    analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, queue_a, analyzer,))
+    publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, client, ))
 
     # Setting frequency
     
     queue_process.start()
     analyze_process.start()
+    publish_process.start()
     queue_process.join()
     analyze_process.join()
+    publish_process.join()
