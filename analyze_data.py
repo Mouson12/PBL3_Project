@@ -1,3 +1,5 @@
+import re
+
 # Class used to analyze data from the transmitter
 class Analyzer():
     
@@ -34,6 +36,8 @@ class Analyzer():
         self.last_rt = ''
         self.last_rt_code = 0
 
+        self.pi_pattern = re.compile("^[a-fA-F0-9]{4}$")
+
     # Method that extracts radio data from a given dictionary
     def data_from_dict(self, item):
         self.rssi = item['rssi']
@@ -47,13 +51,17 @@ class Analyzer():
         delta_rssi = abs(self.last_rssi - self.rssi)
         self.rssi_change = delta_rssi > self.SIGNIFICANT_RSSI_CHANGE
 
-        if self.rssi >= self.RSSI_LOWER_THRESHOLD:
-            rssi_status_code = 0
-        elif self.rssi == self.NO_SIGNAL:
+        # code 01 -> no signal
+        if self.rssi < self.NO_SIGNAL:
             rssi_status_code = 1
+        # code 10 -> poor signal quality
         elif self.rssi < self.RSSI_LOWER_THRESHOLD:
             rssi_status_code = 2
-        else:
+        # code 00 -> strong signal
+        elif self.rssi < self.RSSI_UPPER_THRESHOLD:
+            rssi_status_code = 0
+        # code 11 -> incorrect data (RSSI exceeds the upper threshold)
+        elif self.rssi >= self.RSSI_UPPER_THRESHOLD:
             rssi_status_code = 3
 
         self.last_rssi = self.rssi
@@ -65,13 +73,17 @@ class Analyzer():
         delta_audio = abs(self.last_audio - self.audio_level)
         self.audio_change = delta_audio > self.SIGNIFICANT_AUDIO_CHANGE
 
-        if self.audio_level >= self.AUDIO_LOWER_THRESHOLD:
-            audio_status_code = 0
-        elif self.audio_level == self.NO_AUDIO:
+        # code 01 -> no audio (radio silence)
+        if self.audio_level < self.NO_AUDIO:
             audio_status_code = 1
+        # code 10 -> poor audio quality
         elif self.audio_level < self.AUDIO_LOWER_THRESHOLD:
             audio_status_code = 2
-        else:
+        # code 00 -> strong audio signal
+        elif self.audio_level < self.AUDIO_UPPER_THRESHOLD:
+            audio_status_code = 0
+        # code 11 -> incorrect data (audio level exceeds the upper threshold)
+        elif self.audio_level >= self.AUDIO_UPPER_THRESHOLD:
             audio_status_code = 3
 
         self.last_audio = self.audio_level
@@ -92,17 +104,17 @@ class Analyzer():
 
         
     # Method that returns RDS PI status code
-    def rds_pi_status(self, is_rds):
-        # no RDS
+    def rds_pi_status(self, is_rds, radio_frequency):
+        # code 11 -> no RDS
         if not is_rds:
             rds_pi_status_code = 3
-        # empty field
+        # code 01 -> empty field
         elif not self.rds_pi.strip():
             rds_pi_status_code = 1
-        # wrong data type (not a string)
-        elif not isinstance(self.rds_pi, str):
+        # code 10 -> incorrect PI (other format than 4 hexadecimal digits)
+        elif not self.pi_pattern.match(self.rds_pi):
             rds_pi_status_code = 2
-        # correct PI
+        # code 00 -> correct PI
         else:
             rds_pi_status_code = 0
 
@@ -113,16 +125,16 @@ class Analyzer():
 
     # Method that returns RDS PS status code
     def rds_ps_status(self, is_rds):
-        # no RDS
+        # code 11 -> no RDS
         if not is_rds:
             rds_ps_status_code = 3
-        # empty field
+        # code 01 -> empty field
         elif not self.rds_ps.strip():
             rds_ps_status_code = 1
         # wrong data type (not a string)
         elif not isinstance(self.rds_ps, str):
             rds_ps_status_code = 2
-        # correct PS
+        # code 00 -> correct PS
         else:
             rds_ps_status_code = 0
 
