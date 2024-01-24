@@ -104,7 +104,7 @@ class Analyzer():
 
         
     # Method that returns RDS PI status code
-    def rds_pi_status(self, is_rds, radio_frequency):
+    def rds_pi_status(self, is_rds):
         # code 11 -> no RDS
         if not is_rds:
             rds_pi_status_code = 3

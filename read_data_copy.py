@@ -99,16 +99,26 @@ class Radio(TEF6686):
                 analyzed_queue.put(item)
     
 
-    def send_analyzed_data(self, analyzed_queue, client):
-        while True:
-            item = analyzed_queue.get()
+    def send_analyzed_data(self, analyzed_queue):
+        try:
+            client = connect_mqtt()
+        except:
+            print("Nie połączono")
+        else:
+            client.loop_start()
+            subscribe(client)
+            while True:
+                item = analyzed_queue.get()
+                if item is None:
+                    client.loop_stop()
+                    break
+                else:
+                    msg = dict_to_csv(item)
+                    # print(msg)
+                    if publish(client, msg) != 0:
+                        print("Failed to publish")
+            
 
-            if item is None:
-                break
-            else:
-                msg = dict_to_csv(item)
-                # print(msg)
-                publish(client, msg)
 
 
 def dict_to_csv(data_dict):
@@ -130,31 +140,46 @@ def connect_mqtt():
     return client
 
 
-def publish(client, msg):
+def publish(client: mqtt_client, msg):
     result = client.publish(topic, msg)
     status = result[0]
-    if status == 0:
-        print(f"Send `{msg}` to topic `{topic}`")
-    else:
-        print(f"Failed to send message to topic {topic}")
+    return status
 
 
+def subscribe(client: mqtt_client):
+    def on_message(client, userdata, msg):
+        print(msg.payload.decode())
+        try:
+            radio_frequency = float(msg.payload.decode())
+        except:
+            print('Could not parse')
+        else:
+            if 87.5 < radio_frequency < 108:
+                radio.init()
+                radio.tune_to('FM', int(radio_frequency*100))
+                radio.__PS_OFFSET__ = [False, False, False, False]
+                radio.__PS_LIST__ = ['--','--', '--', '--']
+            else:
+                print('Bad frequency')
 
-def run():
-    client = connect_mqtt()
-    client.loop_start()
-    publish(client)
-    client.loop_stop()
+    client.subscribe(sub_topic)
+    client.on_message = on_message
 
 
 if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 107.5 # [MHz] !!!!!!!!!
-    broker = '7.tcp.eu.ngrok.io'
-    port = 16091
+    radio_frequency = 91.0 # [MHz] !!!!!!!!!
+    # broker = '7.tcp.eu.ngrok.io'
+    # port = 16091
+    
+    broker = '192.168.1.44'
+    port = 1883
+
     topic = "sensor-data"
+    sub_topic = "set-frequency"
+
     ################
 
     # Starting radio tuner 
@@ -175,13 +200,11 @@ if __name__ == "__main__":
 
     analyzer = Analyzer()
 
-    client = connect_mqtt()
-
     queue_d = Queue()
     queue_a = Queue()
     queue_process = Process(target=radio.queue_radio_data, args=(queue_d,))
     analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, queue_a, analyzer,))
-    publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, client, ))
+    publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, ))
 
     # Setting frequency
     
