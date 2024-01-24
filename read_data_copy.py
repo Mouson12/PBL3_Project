@@ -155,10 +155,8 @@ def subscribe(client: mqtt_client):
             print('Could not parse')
         else:
             if 87.5 < radio_frequency < 108:
-                radio.init()
                 radio.tune_to('FM', int(radio_frequency*100))
-                radio.__PS_OFFSET__ = [False, False, False, False]
-                radio.__PS_LIST__ = ['--','--', '--', '--']
+                print("FFFFFFFF")
             else:
                 print('Bad frequency')
 
@@ -171,11 +169,11 @@ if __name__ == "__main__":
 
     ################
     radio_frequency = 91.0 # [MHz] !!!!!!!!!
-    # broker = '7.tcp.eu.ngrok.io'
-    # port = 16091
-    
-    broker = '192.168.1.44'
-    port = 1883
+    broker = '7.tcp.eu.ngrok.io'
+    port = 16716
+
+    # broker = '192.168.114.137'
+    # port = 1883
 
     topic = "sensor-data"
     sub_topic = "set-frequency"
@@ -183,7 +181,7 @@ if __name__ == "__main__":
     ################
 
     # Starting radio tuner 
-    
+
     print (client_id)
     radio = Radio(client_id)
     radio.init()
@@ -192,7 +190,7 @@ if __name__ == "__main__":
     radio.load_settings()
     radio.check_tuner_status()
 
-    radio.tune_to('FM', int(radio_frequency*100)) 
+    radio.tune_to('FM', int(radio_frequency*100))
 
     """
     Start client
@@ -207,6 +205,7 @@ if __name__ == "__main__":
     publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, ))
 
     # Setting frequency
+
     
     queue_process.start()
     analyze_process.start()
