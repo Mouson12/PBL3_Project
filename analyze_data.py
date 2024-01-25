@@ -93,8 +93,8 @@ class Analyzer():
             # stop after checking 50 values and assign status code
             # based on number of instances of values in each range
             if self.counter == 50:
-                instance_num = [self.count_no_signal, self.count_low_signal, self.count_correct_signal]
-                self.rssi_status_code = 2 - instance_num.index(min(instance_num))
+                instance_num = [self.count_no_signal * 1.4, self.count_low_signal * 1.2, self.count_correct_signal]
+                self.rssi_status_code = 2 - instance_num.index(max(instance_num))
 
                 self.if_count = False
                 self.count_correct_signal = 0
