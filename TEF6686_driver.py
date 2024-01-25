@@ -620,7 +620,7 @@ class TEF6686:
         self.__AF_LIST_UNCHANGED__ = 0
         self.__PS_LIST__ = ['--','--', '--', '--']
         self.__RT_LIST__ = ['--','--', '--', '--', '--','--', '--', '--', '--','--', '--', '--', '--','--', '--', '--']
-        
+    
         
     def tune_step(self, mode = 'UP', step = 10, dbg = False):                                   # default step: 100 kHz
         
@@ -740,7 +740,7 @@ class TEF6686:
             
             self.i2c_write_line(b'\x03\x20\x80\x01')                                            # get fast quality status (no additional data like IF bandwidth, multipath detection etc
             result = self.i2c_read(4)
-            RF_level = 0.1 * int.from_bytes(result[2:4], 'big')
+            RF_level = 0.1 * int.from_bytes(result[2:4], 'big') - 7.5 # rssi correction
             
             self.i2c_write_line(b'\x03\x20\x85\x01')
             result = self.i2c_read(2)
@@ -756,7 +756,7 @@ class TEF6686:
             
             self.i2c_write_line(b'\x03\x20\x81\x01')
             result = self.i2c_read(14)
-            RF_level = 0.1 * int.from_bytes(result[2:4], 'big')
+            RF_level = 0.1 * int.from_bytes(result[2:4], 'big') - 7.5 # rssi correction
             IF_bandwidth = 0.1*int.from_bytes(result[10:12],'big')
         
             self.i2c_write_line(b'\x03\x20\x85\x01')
@@ -828,18 +828,17 @@ class TEF6686:
                 
                     PS_FRACTION = RDS_BLOCK_D.decode('UTF-8')
                     PS_ERROR = CRC_DATA[6:8]                      
-                    
                     if dbg == True:
                         print("Offset: ", offset, "Error: ", OFFSET_ERROR," Fraction :", PS_FRACTION, " Error: ", PS_ERROR)
                     
                     if PS_ERROR == '00' or PS_ERROR == '01':                               # acceptable PS error (either none or corrected)
-                        
-                        if self.__PS_OFFSET__[offset] == False:
-                            self.__PS_LIST__[offset] = PS_FRACTION
-                            if BLOCK_B_ERROR == '00' or BLOCK_B_ERROR == '01':
-                                self.__PS_OFFSET__[offset] = True
+                        # if self.__PS_OFFSET__[offset] == False: # problems with PS
+                        self.__PS_LIST__[offset] = PS_FRACTION
+                        if BLOCK_B_ERROR == '00' or BLOCK_B_ERROR == '01':
+                            self.__PS_OFFSET__[offset] = True
                         
                         self.RDS_PS = self.__PS_LIST__[0] + self.__PS_LIST__[1] + self.__PS_LIST__[2] + self.__PS_LIST__[3]
+                        
                     else:
                         pass
                     
