@@ -75,8 +75,10 @@ class Analyzer():
                     self.count_low_signal += 1
                 
                 rssi_status_code = self.last_rssi_code
+                rssi_status_code = self.last_rssi_code
                 self.if_count = True
                 self.counter += 1
+
         else:
             # count instances of correct, low and no signal values
             if self.rssi > self.RSSI_LOWER_THRESHOLD and self.rssi < self.RSSI_UPPER_THRESHOLD:
@@ -216,7 +218,7 @@ if __name__ == "__main__":
         analyzer = Analyzer()
         is_rds = True
 
-        # item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
+        item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
 
         analyzer.data_from_dict(item)
 
