@@ -74,9 +74,10 @@ class Analyzer():
                 elif self.rssi < self.RSSI_LOWER_THRESHOLD:
                     self.count_low_signal += 1
                 
-                self.rssi_status_code = self.last_rssi_code
+                rssi_status_code = self.last_rssi_code
                 self.if_count = True
                 self.counter += 1
+                self.counter = 0
         
         else:
             # count instances of correct, low and no signal values
@@ -87,21 +88,21 @@ class Analyzer():
             elif self.rssi < self.RSSI_LOWER_THRESHOLD:
                 self.count_low_signal += 1
 
-            self.rssi_status_code = self.last_rssi_code
+            rssi_status_code = self.last_rssi_code
             self.counter += 1
 
             # stop after checking 50 values and assign status code
             # based on number of instances of values in each range
             if self.counter == 50:
                 instance_num = [self.count_no_signal * 1.4, self.count_low_signal * 1.2, self.count_correct_signal]
-                self.rssi_status_code = 2 - instance_num.index(max(instance_num))
+                rssi_status_code = 2 - instance_num.index(max(instance_num))
 
                 self.if_count = False
                 self.count_correct_signal = 0
                 self.count_no_signal = 0
                 self.count_low_signal = 0
 
-        self.last_rssi_code = self.rssi_status_code
+        self.last_rssi_code = rssi_status_code
         self.last_rssi = self.rssi
 
         return rssi_status_code
@@ -216,7 +217,7 @@ if __name__ == "__main__":
         analyzer = Analyzer()
         is_rds = True
 
-        # item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
+        item = {"ts": 17034.7, "rssi": 9.1, "audio": 3, "rds_pi": 3233, "rds_ps": '--------', "rds_rt": 'radio text'}
 
         analyzer.data_from_dict(item)
 

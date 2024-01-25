@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Array
 from TEF6686_driver import TEF6686
 from paho.mqtt import client as mqtt_client
 
@@ -70,9 +70,12 @@ class Radio(TEF6686):
 
     
     # Method for reading data from queue
-    def analyze_radio_data(self, data_queue, analyzed_queue, analyzer):
+    def analyze_radio_data(self, data_queue, analyzed_queue, array):
         while True:
             item = data_queue.get()
+            analyzer.RSSI_LOWER_THRESHOLD = array[0]
+            analyzer.RSSI_UPPER_THRESHOLD = array[1]
+            analyzer.SIGNIFICANT_RSSI_CHANGE = array[2]
 
             if item is None:
                 break
@@ -95,7 +98,7 @@ class Radio(TEF6686):
 
                 status_code = analyzer.status_code(rssi_status_code, audio_status_code, rds_pi_status_code, rds_ps_status_code, rds_rt_status_code)
                 item["code"] = status_code
-
+                print(analyzer.RSSI_LOWER_THRESHOLD, analyzer.RSSI_UPPER_THRESHOLD, analyzer.SIGNIFICANT_RSSI_CHANGE)
                 analyzed_queue.put(item)
     
 
@@ -114,7 +117,7 @@ class Radio(TEF6686):
                     break
                 else:
                     msg = dict_to_csv(item)
-                    # print(msg)
+                    # print(bin(msg['code']))
                     if publish(client, msg) != 0:
                         print("Failed to publish")
             
@@ -166,7 +169,7 @@ def subscribe(client: mqtt_client):
                 print('Could not parse ref low')
             else:
                 if -20 <= reference_low <= 120:
-                    pass
+                    analyzer_array[0] = reference_low
                 else:
                     print('Bad ref low')
         elif msg.topic == ref_no_signal_topic:
@@ -176,7 +179,7 @@ def subscribe(client: mqtt_client):
                 print('Could not parse ref no signal')
             else:
                 if -20 <= reference_no_signal <= 120:
-                    pass
+                    analyzer_array[1] = reference_no_signal
                 else:
                     print('Bad ref no signal')
         elif msg.topic == rssi_change_topic:
@@ -186,7 +189,7 @@ def subscribe(client: mqtt_client):
                 print('Could not parse rssi change')
             else:
                 if -20 <= rssi_change_delta <= 120:
-                    pass
+                    analyzer_array[2] = rssi_change_delta
                 else:
                     print('Bad rssi change')
 
@@ -198,7 +201,7 @@ if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 91.0 # [MHz] !!!!!!!!!
+    radio_frequency = 98.8 # [MHz] !!!!!!!!!
     broker = '2.tcp.eu.ngrok.io'
     port = 16784
 
@@ -230,9 +233,10 @@ if __name__ == "__main__":
 
     queue_d = Queue()
     queue_a = Queue()
+    analyzer_array = Array('i', [analyzer.RSSI_LOWER_THRESHOLD, analyzer.RSSI_UPPER_THRESHOLD, analyzer.SIGNIFICANT_RSSI_CHANGE])
 
     queue_process = Process(target=radio.queue_radio_data, args=(queue_d,))
-    analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, queue_a, analyzer,))
+    analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, queue_a, analyzer_array, ))
     publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, ))
 
     queue_process.start()
