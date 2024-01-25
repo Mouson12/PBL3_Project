@@ -832,10 +832,10 @@ class TEF6686:
                         print("Offset: ", offset, "Error: ", OFFSET_ERROR," Fraction :", PS_FRACTION, " Error: ", PS_ERROR)
                     
                     if PS_ERROR == '00' or PS_ERROR == '01':                               # acceptable PS error (either none or corrected)
-                        if self.__PS_OFFSET__[offset] == False: # problems with PS
-                            self.__PS_LIST__[offset] = PS_FRACTION
-                            if BLOCK_B_ERROR == '00' or BLOCK_B_ERROR == '01':
-                                self.__PS_OFFSET__[offset] = True
+                        # if self.__PS_OFFSET__[offset] == False: # problems with PS
+                        self.__PS_LIST__[offset] = PS_FRACTION
+                        if BLOCK_B_ERROR == '00' or BLOCK_B_ERROR == '01':
+                            self.__PS_OFFSET__[offset] = True
                         
                         self.RDS_PS = self.__PS_LIST__[0] + self.__PS_LIST__[1] + self.__PS_LIST__[2] + self.__PS_LIST__[3]
                         

@@ -64,7 +64,7 @@ class Radio(TEF6686):
             
             time_stamp = time()
             data_dict = {"ts": time_stamp, "rssi": self.rssi, "rds_pi": self.rds_pi, "rds_ps": self.rds_ps, "rds_rt": self.rds_rt}
-            # print(data_dict)
+            print(data_dict)
             data_queue.put(data_dict)
             sleep(0.07)
 
@@ -99,7 +99,7 @@ class Radio(TEF6686):
                 analyzed_queue.put(item)
     
 
-    def send_analyzed_data(self, analyzed_queue, client):
+    def send_analyzed_data(self, analyzed_queue):
         while True:
             item = analyzed_queue.get()
 
@@ -107,8 +107,9 @@ class Radio(TEF6686):
                 break
             else:
                 msg = dict_to_csv(item)
-                # print(msg)
+                print(msg)
                 publish(client, msg)
+
 
 
 def dict_to_csv(data_dict):
@@ -151,9 +152,9 @@ if __name__ == "__main__":
     client_id = hex(uuid.getnode())
 
     ################
-    radio_frequency = 107.5 # [MHz] !!!!!!!!!
-    broker = '7.tcp.eu.ngrok.io'
-    port = 16091
+    radio_frequency = 91.0 # [MHz] !!!!!!!!!
+    broker = '2.tcp.eu.ngrok.io'
+    port = 16784
     topic = "sensor-data"
     ################
 
@@ -175,13 +176,13 @@ if __name__ == "__main__":
 
     analyzer = Analyzer()
 
-    client = connect_mqtt()
+    # client = connect_mqtt()
 
     queue_d = Queue()
     queue_a = Queue()
     queue_process = Process(target=radio.queue_radio_data, args=(queue_d,))
     analyze_process = Process(target=radio.analyze_radio_data, args=(queue_d, queue_a, analyzer,))
-    publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, client, ))
+    publish_process = Process(target=radio.send_analyzed_data, args=(queue_a, ))
 
     # Setting frequency
     
